@@ -1,0 +1,43 @@
+service:
+  host: "0.0.0.0"
+  port: 8000
+
+database:
+  url: "${DATABASE_URL}"
+
+queue:
+  redis_url: "${REDIS_URL}"
+  queue_name: "ingest_tasks"
+
+ingest:
+  raw_dir: "./data/raw"
+  processed_dir: "./data/processed"
+  chunks_dir: "./data/chunks"
+  allowed_extensions: [".md", ".docx", ".pdf"]
+
+split:
+  headers: ["##", "###"]
+  chunk_min_size: 200
+  chunk_max_size: 600
+  overlap_size: 80
+
+embed:
+  model_name: "BAAI/bge-small-zh-v1.5"
+  device: "cpu"
+  batch_size: 16
+  prefix_template: "{source} | {chapter} | {content}"
+
+vector_store:
+  persist_dir: "./data/chroma"
+  collection_name: "enterprise_kb"
+
+retrieve:
+  top_k: 5
+
+llm:
+  provider: "deepseek"
+  api_key: "${DEEPSEEK_API_KEY}"
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-chat"
+  temperature: 0.1
+  max_tokens: 800
