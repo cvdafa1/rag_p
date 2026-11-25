@@ -37,11 +37,12 @@ class EmbedConfig(BaseModel):
     prefix_template: str = "{source} | {chapter} | {content}"
 
 class VectorStoreConfig(BaseModel):
-    persist_dir: str = "./data/chroma"
+    persist_dir: str = "./data/chroma_db"
     collection_name: str = "enterprise_kb"
 
 class RetrieveConfig(BaseModel):
     top_k: int = 5
+    distance_threshold: float = 0.55
 
 class LLMConfig(BaseModel):
     provider: str = "deepseek"
@@ -65,13 +66,10 @@ class Config(BaseModel):
 
 def load_config(path: str = "config.yaml") -> Config:
     p = Path(path)
-    print(p)
     if not p.exists():
-        print('----------')
         return Config()
     with open(p, "r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
-    print(raw)
     # 环境变量替换
     def _resolve_env(obj):
         if isinstance(obj, dict):
@@ -86,4 +84,3 @@ def load_config(path: str = "config.yaml") -> Config:
 
 
 config = load_config(BASE_DIR / "config.yaml")
-print(config)

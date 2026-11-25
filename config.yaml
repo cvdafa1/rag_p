@@ -22,17 +22,18 @@ split:
   overlap_size: 80
 
 embed:
-  model_name: "BAAI/bge-small-zh-v1.5"
+  model_name: "./models/bge-small-zh-v1.5"
   device: "cpu"
   batch_size: 16
   prefix_template: "{source} | {chapter} | {content}"
 
 vector_store:
-  persist_dir: "./data/chroma"
+  persist_dir: "./data/chroma_db"
   collection_name: "enterprise_kb"
 
 retrieve:
   top_k: 5
+  distance_threshold: 0.55
 
 llm:
   provider: "deepseek"
