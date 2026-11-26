@@ -11,7 +11,7 @@
   1. 先用 ## / ### 把文档拆成"章节块"
   2. 每个章节块内部，如果超过 600 字，按 520 字窗口 + 80 字步长滑动
   3. 如果章节块本身就在 200～600 字之间，直接作为一个 chunk
-  4. 如果章节块 < 200 字，合并到下一个章节块（避免碎片）
+  4. 如果章节块 < 200 字，直接作为一个 chunk
 
 输出每个 chunk 携带：
   - chunk_id:   "{doc_id}_C{序号:02d}"
@@ -55,45 +55,29 @@ def split_document(
     # Step 2: 每个章节内部切分
     chunks = []
     chunk_seq = 1
-    buffer = ""
-    buffer_chapter = None
 
     for section in sections:
         content= section["content"]
         chapter_path = section["chapter_path"]
-        # 1. 尝试把当前 section 加入 buffer
-        candidate = (buffer + "\n" + content).strip() if buffer else content
-        # 2. 如果还不够大 → 继续攒
-        if len(candidate) < config.split.chunk_min_size:
-            buffer = candidate
-            buffer_chapter = buffer_chapter or chapter_path
+        # 1. 章节的字小于200直接自成一块
+        if len(content) < config.split.chunk_min_size:
+            chunks.append(Chunk(
+                chunk_id=f"{doc_id}_C{chunk_seq:02d}",
+                content=content.strip(),
+                chapter=chapter_path or "unknown",
+                char_count=len(content),
+            ))
+            chunk_seq += 1
             continue
-        # 3. buffer 够了 → 交给切分函数
-        buffer = ""
-        buffer_chapter = None
+        # 3. 大于200 → 交给切分函数
         section_chunks = _split_section(
-            candidate,
-            chapter_path, # 用当前大 section 的 chapter_path
+            content,
+            chapter_path,
             doc_id,
             chunk_seq,
         )
         chunks.extend(section_chunks)
         chunk_seq += len(section_chunks)
-    if buffer:
-        if chunks:
-            # 合并到最后一个 chunk
-            chunks[-1].content += "\n" + buffer
-            chunks[-1].content = chunks[-1].content.strip()
-            chunks[-1].char_count = len(chunks[-1].content)
-        else:
-            # 整篇文档都太小 → 强制成块
-            chunks.append(Chunk(
-                chunk_id=f"{doc_id}_C{chunk_seq:02d}",
-                content=buffer.strip(),
-                chapter=buffer_chapter or "unknown",
-                char_count=len(buffer),
-            ))
-
     return chunks
 
 
